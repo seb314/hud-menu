@@ -175,8 +175,13 @@ def try_gtk_interface(gtk_bus_name_cmd, gtk_object_path_cmd):
 """
 
 # --- Get X Window ID ---
-window_id_cmd = subprocess.check_output(['xprop', '-root', '-notype', '_NET_ACTIVE_WINDOW']).decode('utf-8')
-window_id = window_id_cmd.split(' ')[4].split(',')[0].split('\n')[0]
+if 'debug' in sys.argv:
+  print('Press window to show menu for.')
+  window_id_cmd = subprocess.check_output(['xwininfo']).decode('utf-8')
+  window_id = window_id_cmd.split('Window id: ')[1].split(' ')[0]  
+else:
+  window_id_cmd = subprocess.check_output(['xprop', '-root', '-notype', '_NET_ACTIVE_WINDOW']).decode('utf-8')
+  window_id = window_id_cmd.split(' ')[4].split(',')[0].split('\n')[0]
 
 # For testing get the id of the target window from xwininfo
 # window_id = '0x3400186'
