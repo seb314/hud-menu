@@ -29,6 +29,7 @@ Provides a way to run menubar commands through a searchable list.
       UBUNTU_MENUPROXY=1
     fi 
    ```
+   You can also add ```export APPMENU_DISPLAY_BOTH=1``` to this file on some distributions to show the menubar in apps that may otherwise hide it when the hud-menu-service is running.
     
 3. ```hud-menu.py``` should be bound to run (with python 3+) with a shortcut (such as a keyboard shortcut). 
 
