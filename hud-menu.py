@@ -1,8 +1,33 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
 import dbus
 import subprocess
 import sys
+from collections import defaultdict
+import pickle
+import os
+
+
+def pickle_dump(obj, file_path, allow_exists=False):
+    """convenience wrapper around pickle.dump that opens the file for you
+
+       see also: pickle_load(...)
+    """
+    mode = 'wb' if allow_exists else 'xb'
+    with open(file_path, mode=mode) as f:
+        pickle.dump(obj, f)
+
+
+def pickle_load(file_path):
+    """convenience wrapper around pickle.load that opens the file for you
+
+       see also: pickle_dump(...)
+    """
+    with open(file_path, mode='rb') as f:
+        return pickle.load(f)
+
+
+
 
 """
   format_label_list
@@ -63,7 +88,16 @@ def try_appmenu_interface(window_id):
 
   explore_dbusmenu_item(dbusmenu_items[1], [])
 
-  menuKeys = sorted(dbusmenu_item_dict.keys())
+  item_prio_file = os.path.join(os.environ['HOME'], '.hud_item_prios.pickle')
+  item_prios = defaultdict(lambda: 0)
+  try: 
+    stored_prios = pickle_load(item_prio_file)
+    item_prios.update(stored_prios)
+  except:
+    pass
+
+  menuKeys = sorted(dbusmenu_item_dict.keys(),
+                    key=lambda k: (-item_prios[k], k))
 
   # --- Run rofi/dmenu
   menu_string = ''
@@ -88,6 +122,9 @@ def try_appmenu_interface(window_id):
   if menu_result in dbusmenu_item_dict:
     action = dbusmenu_item_dict[menu_result]
     dbusmenu_object_iface.Event(action, 'clicked', 0, 0)
+
+    item_prios[menu_result] += 1
+    pickle_dump({cmd:count for cmd, count in item_prios.items() if count > 0}, item_prio_file, allow_exists=True)
 
 
 """
