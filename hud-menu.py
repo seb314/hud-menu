@@ -6,6 +6,7 @@ import sys
 from collections import defaultdict
 import pickle
 import os
+import time
 
 
 def pickle_dump(obj, file_path, allow_exists=False):
@@ -123,7 +124,7 @@ def try_appmenu_interface(window_id):
     action = dbusmenu_item_dict[menu_result]
     dbusmenu_object_iface.Event(action, 'clicked', 0, 0)
 
-    item_prios[menu_result] += 1
+    item_prios[menu_result] = time.time()
     pickle_dump({cmd:count for cmd, count in item_prios.items() if count > 0}, item_prio_file, allow_exists=True)
 
 
