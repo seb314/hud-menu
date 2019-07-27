@@ -2,8 +2,7 @@
 
 Provides a way to run menubar commands through a searchable list.
 
-This fork attempts to sort menu items according to their usage
-frequency, so the most used commands are found faster
+This fork  mru-sorts menu items, so the most-recently-used commands are found faster
 
 ## Dependencies
 * python-dbus

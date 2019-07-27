@@ -5,8 +5,12 @@ import subprocess
 import sys
 from collections import defaultdict
 import pickle
-import os
-import time
+from os import environ
+from os.path import join
+
+
+MRU_FILE = join(environ['HOME'], '.hud_item_prios.pickle')
+UNSEEN_ITEM_MRU_SCORE = float('inf')
 
 
 def pickle_dump(obj, file_path, allow_exists=False):
@@ -28,6 +32,24 @@ def pickle_load(file_path):
         return pickle.load(f)
 
 
+def mru_sort_menu_items(items, mru_file=MRU_FILE):
+    try:
+        mru_list = pickle_load(mru_file)
+    except:
+        mru_list = []
+
+    mru_scores = defaultdict(lambda: UNSEEN_ITEM_MRU_SCORE)
+    mru_scores.update({item: i for i, item in enumerate(mru_list)})
+
+    items = sorted(items, key=lambda k: (mru_scores[k], k))
+    return items, mru_scores
+
+
+def update_mru(used, prev_mru, mru_file=MRU_FILE):
+    prev_mru[used] = -1
+    mru_list = [e for e in prev_mru if prev_mru[e] < UNSEEN_ITEM_MRU_SCORE]
+    mru_list = sorted(mru_list, key=lambda k: (prev_mru[k], k))
+    pickle_dump(mru_list, mru_file, allow_exists=True)
 
 
 """
@@ -89,16 +111,7 @@ def try_appmenu_interface(window_id):
 
   explore_dbusmenu_item(dbusmenu_items[1], [])
 
-  item_prio_file = os.path.join(os.environ['HOME'], '.hud_item_prios.pickle')
-  item_prios = defaultdict(lambda: 0)
-  try: 
-    stored_prios = pickle_load(item_prio_file)
-    item_prios.update(stored_prios)
-  except:
-    pass
-
-  menuKeys = sorted(dbusmenu_item_dict.keys(),
-                    key=lambda k: (-item_prios[k], k))
+  menuKeys, _mru_scores = mru_sort_menu_items(dbusmenu_item_dict.keys())
 
   # --- Run rofi/dmenu
   menu_string = ''
@@ -124,8 +137,7 @@ def try_appmenu_interface(window_id):
     action = dbusmenu_item_dict[menu_result]
     dbusmenu_object_iface.Event(action, 'clicked', 0, 0)
 
-    item_prios[menu_result] = time.time()
-    pickle_dump({cmd:count for cmd, count in item_prios.items() if count > 0}, item_prio_file, allow_exists=True)
+    update_mru(menu_result, _mru_scores)
 
 
 """
@@ -181,7 +193,7 @@ def try_gtk_interface(gtk_bus_name_cmd, gtk_object_path_cmd):
 
   explore_menu((0,0), [])
 
-  menuKeys = sorted(gtk_menubar_action_dict.keys())
+  menuKeys, _mru_scores = mru_sort_menu_items(gtk_menubar_action_dict.keys())
 
   # --- Run rofi/dmenu
   menu_string = ''
@@ -207,6 +219,9 @@ def try_gtk_interface(gtk_bus_name_cmd, gtk_object_path_cmd):
     action = gtk_menubar_action_dict[menu_result]
     # print('GTK Action :', action)
     gtk_action_object_actions_iface.Activate(action.replace('unity.', ''), [], dict())
+
+    update_mru(menu_result, _mru_scores)
+
 
 """
   main
